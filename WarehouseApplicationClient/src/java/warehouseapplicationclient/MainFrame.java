@@ -799,17 +799,23 @@ public class MainFrame extends javax.swing.JFrame {
     }//GEN-LAST:event_MinFieldActionPerformed
 
     private void GetRangeBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_GetRangeBtnActionPerformed
+        BigDecimal min = null;
+        BigDecimal max = null;
         try {
             int selectedIndex = this.RangeTypeField.getSelectedIndex();
             Object[][] inventoryList;
             SearchField.setText("");
-
+            
             switch(selectedIndex){
                 case 0:
                 inventoryList = userSessionBean.getInventoryByStockReserve();
                 break;
                 case 1:
-                inventoryList = userSessionBean.getInventoryByPrice(new BigDecimal(this.MinField.getText()), new BigDecimal(this.MaxField.getText()));
+                min = new BigDecimal(this.MinField.getText()).setScale(2, RoundingMode.FLOOR);
+                max = new BigDecimal(this.MaxField.getText()).setScale(2, RoundingMode.FLOOR);
+                this.MinField.setText(min.toPlainString());
+                this.MaxField.setText(max.toPlainString());
+                inventoryList = userSessionBean.getInventoryByPrice(min, max);
                 break;
                 case 2:
                 inventoryList = userSessionBean.getAllInventory(null);
@@ -817,6 +823,7 @@ public class MainFrame extends javax.swing.JFrame {
                 default:
                 throw new Exception();
             }
+            
             inventoryModel.setNumRows(0);
 
             if(isEmpty(inventoryList) == false){
@@ -826,7 +833,13 @@ public class MainFrame extends javax.swing.JFrame {
             }
 
             inventoryModel.fireTableDataChanged();
-        }
+        } catch (NumberFormatException ex) {
+            JOptionPane.showMessageDialog(null,
+                        "Failed to get inventory range: Incorrect " + 
+                        (min != null ? "max" : "min") + 
+                        " format! Example of correct format - 10.00"
+                , "Error", JOptionPane.ERROR_MESSAGE);
+        }      
         catch (Exception ex) {
             JOptionPane.showMessageDialog(null, "Failed to get range: " + ex.toString(), "Error", JOptionPane.ERROR_MESSAGE);
         }
@@ -863,17 +876,26 @@ public class MainFrame extends javax.swing.JFrame {
     }//GEN-LAST:event_AmountFieldActionPerformed
 
     private void AddInventoryBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_AddInventoryBtnActionPerformed
+        BigDecimal price = null;
         try {
-            BigDecimal price = new BigDecimal(this.PriceField.getText().trim());
+            price = new BigDecimal(this.PriceField.getText().trim());
             int amount = Integer.parseInt(this.AmountField.getText().trim());
             String description = this.DescriptionField.getText().trim();
-
+            price = price.setScale(2, RoundingMode.FLOOR);
+         
             String response = userSessionBean.createInventory(description, price, amount);
 
             if(response != null)
-            JOptionPane.showMessageDialog(null, "Failed to make an inventory: " + response, "Error", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(null, "Failed to make an inventory: " + response, "Error", JOptionPane.ERROR_MESSAGE);
 
             this.initializeInventoryPanel();
+        }  catch (NumberFormatException ex) {
+            JOptionPane.showMessageDialog(null,
+                        "Failed to create inventory: Incorrect " + 
+                        (price != null ? "amount" : "price") + 
+                        " format! Example of correct format - " + 
+                        (price != null ? "10" : "10.00")
+                , "Error", JOptionPane.ERROR_MESSAGE);
         }
         catch (Exception ex) {
             JOptionPane.showMessageDialog(null, "Failed to make an inventory: " + ex.toString(), "Error", JOptionPane.ERROR_MESSAGE);
@@ -1064,16 +1086,30 @@ public class MainFrame extends javax.swing.JFrame {
 
                     if(e.getType() == e.UPDATE && row > -1 && column > -1){
                         try {
-                            String priceString = (String) model.getValueAt(row, 2);
-                            BigDecimal price = new BigDecimal(priceString);
+                            Object priceObject =  model.getValueAt(row, 2);
+                            BigDecimal price = BigDecimal.ZERO;
+                            if(priceObject.getClass().equals(String.class)){
+                                price = new BigDecimal((String)priceObject);
+                            } else if(priceObject.getClass().equals(BigDecimal.class)){
+                                price = (BigDecimal) priceObject;
+                            }
+                            
                             price = price.setScale(2, RoundingMode.FLOOR);
+          
+                            Object amountObject =  model.getValueAt(row, 3);
+                            int amount = 0;
+                            if(amountObject.getClass().equals(int.class)){
+                                amount = (int) amountObject;
+                            } else if(priceObject.getClass().equals(BigDecimal.class)){
+                                amount = Integer.parseInt((String) amountObject);
+                            }
                             
                             String response = userSessionBean.updateInventory
                             (
                                     (int) model.getValueAt(row, 0), 
                                     (String) model.getValueAt(row, 1), 
                                     price,
-                                    (int) model.getValueAt(row, 3)
+                                    amount 
                             );
 
                             if(response != null) 
