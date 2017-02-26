@@ -226,33 +226,31 @@ public class UserSessionBean implements UserSessionBeanRemote {
         if (inventory != null) {
             inventory.setDescription(description);
             inventory.setPrice(price);
-            int stockDifference = instock - inventory.getInstock();
-
+            int stockReservedDifference = instock - inventory.getReserved();
+            
             inventory.setInstock(instock);
             
-            if(stockDifference < 0){
+            if(stockReservedDifference < 0){
                 List<Orders> orders = getAllInventoryOrders(inventory);
                 
                 if(isEmpty(orders) == false) {
-                    sortOderList(orders);
-
                     for(Orders order: orders){
                         int orderAmount = order.getAmount();
-                        stockDifference += orderAmount;
+                        stockReservedDifference += orderAmount;
 
-                        if(stockDifference >= 0){
-                            orderAmount = stockDifference;
+                        if(stockReservedDifference >= 0){
+                            orderAmount = stockReservedDifference;
                         }
 
-                        if(stockDifference < 0 || orderAmount == 0){
-                            em.remove(order);
+                        if(stockReservedDifference < 0 || orderAmount == 0){
+                            this.deleteOrder(order.getId());
                         } else {
                            order.setAmount(orderAmount);
                            em.persist(order);
                            break;
                         }
 
-                        if(stockDifference >= 0){
+                        if(stockReservedDifference >= 0){
                             break;
                         }
                     }                    
@@ -348,7 +346,7 @@ public class UserSessionBean implements UserSessionBeanRemote {
        } 
        
        for(Orders order: orders){
-           Inventory inventory = em.find(Inventory.class, order.getItemId().getId());
+           Inventory inventory = order.getItemId();
            inventory.setReserved(inventory.getReserved() - order.getAmount());
            em.persist(inventory);
            em.remove(order);
@@ -363,27 +361,28 @@ public class UserSessionBean implements UserSessionBeanRemote {
             return "Only positive amount allowed!";
         }
         
+        if(amount == 0){
+            return this.deleteOrder(orderID);
+        }
+        
         List<Orders> orders = this.getUserOrdersList(null);
 
         for(Orders order: orders){
             if(order.getId() == orderID){
                 Inventory inventory = order.getItemId();
                 
-                if(amount == 0){
-                    return this.deleteOrder(orderID);
-                }
-
                 int difference = amount - order.getAmount();
                 
                 if(difference == 0){
                     return null;
                 } else if(difference > 0) {
                     int free = inventory.getInstock() - inventory.getReserved();
-                    amount = free > amount ? amount : free;
-                    inventory.setReserved(inventory.getReserved() + amount);
-                    order.setAmount(amount);
+                    difference = free > difference ? difference : free;
+                    inventory.setReserved(inventory.getReserved() + difference);
+                    order.setAmount(order.getAmount() + difference);
                 } else {
-                    inventory.setReserved(inventory.getReserved() - difference);
+                    // We add difference because it is negative
+                    inventory.setReserved(inventory.getReserved() + difference);
                     order.setAmount(amount);
                 }
                 
@@ -471,8 +470,8 @@ public class UserSessionBean implements UserSessionBeanRemote {
     }
     
     private List<Orders> getAllInventoryOrders(Inventory inventory) {
-        Query query = em.createQuery("SELECT o FROM Orders o WHERE o.itemId = :itemId");
-        query.setParameter("itemID", inventory);
+        Query query = em.createQuery("SELECT o FROM Orders o WHERE o.itemId = :itemId ORDER BY o.date DESC");
+        query.setParameter("itemId", inventory);
         return query.getResultList();
     }
     
@@ -482,7 +481,7 @@ public class UserSessionBean implements UserSessionBeanRemote {
                 : em.createQuery("SELECT o FROM Orders o WHERE (o.userId = :userId) AND "
                         + "(o.userId.firstName LIKE '%" + searchString.trim() + "%' OR "
                         + "o.userId.lastName LIKE '%" + searchString.trim() + "%' OR "
-                        + "o.itemId.description LIKE '%" + searchString.trim() + "%')");
+                        + "o.itemId.description LIKE '%" + searchString.trim() + "%') ORDER BY o.date DESC");
         
         return query.getResultList();
     }
