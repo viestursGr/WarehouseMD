@@ -763,11 +763,17 @@ public class MainFrame extends javax.swing.JFrame {
 
     private void RemoveBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_RemoveBtnActionPerformed
         try {
-            int id = Integer.parseInt(this.SelectedOrderIDField.getText());
+            String idString = this.SelectedOrderIDField.getText();
+            
+            if(isEmpty(idString)){
+                return;
+            }
+            
+            int id = Integer.parseInt(idString.trim());
             String response = userSessionBean.deleteOrder(id);
 
             if(response != null)
-            JOptionPane.showMessageDialog(null, "Failed to remove an order: " + response, "Error", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(null, "Failed to remove an order: " + response, "Error", JOptionPane.ERROR_MESSAGE);
             else {
                 this.SelectedOrderIDField.setText("");
                 this.initializeUserPanel();
@@ -775,15 +781,20 @@ public class MainFrame extends javax.swing.JFrame {
                 this.initializeInventoryPanel();
             }
         }
-        catch (Exception ex) {
-            JOptionPane.showMessageDialog(null, "Failed to remove an order: " + ex.toString(), "Error", JOptionPane.ERROR_MESSAGE);
+        catch (NumberFormatException ex) {
+            JOptionPane.showMessageDialog(null,
+                "Failed to delete order: Incorrect order identifier!"
+                , "Error", JOptionPane.ERROR_MESSAGE);
+        }
+        catch (Exception ex){
+                JOptionPane.showMessageDialog(null, "Failed to delete order: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
         }
     }//GEN-LAST:event_RemoveBtnActionPerformed
 
     private void CheckoutBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_CheckoutBtnActionPerformed
         try {
             BigDecimal checkout = userSessionBean.checkout();
-            JOptionPane.showMessageDialog(null, "Checkout sum: " + checkout.toPlainString(), "Checkout successful!", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(null, "Checkout sum: " + checkout.toPlainString(), "Checkout successful!", JOptionPane.INFORMATION_MESSAGE);
 
             this.initializeUserPanel();
             this.initializeCartPanel();
@@ -908,18 +919,29 @@ public class MainFrame extends javax.swing.JFrame {
 
     private void DeleteInventoryBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_DeleteInventoryBtnActionPerformed
         try {
-            int id = Integer.parseInt(this.SelectedInventoryIDField.getText());
+            String idString = this.SelectedInventoryIDField.getText();
+            
+            if(isEmpty(idString)){
+                return;
+            }
+            
+            int id = Integer.parseInt(idString.trim());
             String response = userSessionBean.deleteInventory(id);
 
             if(response != null)
-            JOptionPane.showMessageDialog(null, "Failed to delete inventory: " + response, "Error", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(null, "Failed to delete inventory: " + response, "Error", JOptionPane.ERROR_MESSAGE);
 
             this.initializeUserPanel();
             this.initializeCartPanel();
             this.initializeInventoryPanel();
         }
-        catch (Exception ex) {
-            JOptionPane.showMessageDialog(null, "Failed to delete inventory: " + ex.toString(), "Error", JOptionPane.ERROR_MESSAGE);
+        catch (NumberFormatException ex) {
+            JOptionPane.showMessageDialog(null,
+                "Failed to delete inventory: Incorrect inventory identifier!"
+                , "Error", JOptionPane.ERROR_MESSAGE);
+        }
+        catch (Exception ex){
+                JOptionPane.showMessageDialog(null, "Failed to delete inventory: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
         }
     }//GEN-LAST:event_DeleteInventoryBtnActionPerformed
 
@@ -938,13 +960,19 @@ public class MainFrame extends javax.swing.JFrame {
             int id = (int) Integer.parseInt(idString.trim());
             String response = userSessionBean.delete(id);
             if(response != null)
-            JOptionPane.showMessageDialog(null, "Failed to delete user: " + response, "Error", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(null, "Failed to delete user: " + response, "Error", JOptionPane.ERROR_MESSAGE);
 
             initializeUserPanel();
+            initializeInventoryPanel();
             initializeCartPanel();
         }
+        catch (NumberFormatException ex) {
+            JOptionPane.showMessageDialog(null,
+                "Failed to delete user: Incorrect user identifier!"
+                , "Error", JOptionPane.ERROR_MESSAGE);
+        }
         catch (Exception ex){
-
+                JOptionPane.showMessageDialog(null, "Failed to delete user: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
         }
     }//GEN-LAST:event_DeleteUserBtnActionPerformed
 
@@ -1009,10 +1037,17 @@ public class MainFrame extends javax.swing.JFrame {
 
                     if(e.getType() == e.UPDATE && row > -1 && column > -1){
                         try{
-                            String depositString = (String) model.getValueAt(row, 3);
-                            BigDecimal deposit = new BigDecimal(depositString);
-                            deposit = deposit.setScale(2, RoundingMode.FLOOR);
                             
+                            Object depositObject =  model.getValueAt(row, 3);
+                            BigDecimal deposit = BigDecimal.ZERO;
+                            if(depositObject.getClass().equals(String.class)){
+                                deposit = new BigDecimal((String)depositObject);
+                            } else if(depositObject.getClass().equals(BigDecimal.class)){
+                                deposit = (BigDecimal) depositObject;
+                            }   
+                            
+                            deposit = deposit.setScale(2, RoundingMode.FLOOR);
+
                             String response = userSessionBean.update
                             (
                                     (int) model.getValueAt(row, 0), 
@@ -1020,6 +1055,7 @@ public class MainFrame extends javax.swing.JFrame {
                                     (String) model.getValueAt(row, 2),
                                     deposit
                             );
+                            
                             if(response != null) 
                                 JOptionPane.showMessageDialog(null, "Failed to update user: " + response, "Error", JOptionPane.ERROR_MESSAGE);                            
                         } catch (NumberFormatException ex){
@@ -1100,7 +1136,7 @@ public class MainFrame extends javax.swing.JFrame {
                             int amount = 0;
                             if(amountObject.getClass().equals(int.class)){
                                 amount = (int) amountObject;
-                            } else if(priceObject.getClass().equals(BigDecimal.class)){
+                            } else if(priceObject.getClass().equals(String.class)){
                                 amount = Integer.parseInt((String) amountObject);
                             }
                             
