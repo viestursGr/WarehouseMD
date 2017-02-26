@@ -117,7 +117,7 @@ public class MainFrame extends javax.swing.JFrame {
         SelectedOrderIDField = new javax.swing.JTextField();
         jLabel14 = new javax.swing.JLabel();
         jLabel15 = new javax.swing.JLabel();
-        jLabel16 = new javax.swing.JLabel();
+        TotalCartSumLabel = new javax.swing.JLabel();
         LogoutBtn = new javax.swing.JButton();
         UsernameLabel = new javax.swing.JLabel();
         usernameLabel1 = new javax.swing.JLabel();
@@ -535,9 +535,9 @@ public class MainFrame extends javax.swing.JFrame {
         jLabel15.setHorizontalAlignment(javax.swing.SwingConstants.RIGHT);
         jLabel15.setText("Total Sum:");
 
-        jLabel16.setFont(new java.awt.Font("Tahoma", 1, 11)); // NOI18N
-        jLabel16.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
-        jLabel16.setText("0.00");
+        TotalCartSumLabel.setFont(new java.awt.Font("Tahoma", 1, 11)); // NOI18N
+        TotalCartSumLabel.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
+        TotalCartSumLabel.setText("0.00");
 
         javax.swing.GroupLayout CartTabLayout = new javax.swing.GroupLayout(CartTab);
         CartTab.setLayout(CartTabLayout);
@@ -556,7 +556,7 @@ public class MainFrame extends javax.swing.JFrame {
                     .addComponent(jLabel15, javax.swing.GroupLayout.PREFERRED_SIZE, 94, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addGroup(CartTabLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                    .addComponent(jLabel16, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addComponent(TotalCartSumLabel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                     .addComponent(SelectedOrderIDField))
                 .addGap(344, 344, 344))
         );
@@ -568,7 +568,7 @@ public class MainFrame extends javax.swing.JFrame {
                 .addGroup(CartTabLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(CheckoutBtn)
                     .addComponent(jLabel15)
-                    .addComponent(jLabel16))
+                    .addComponent(TotalCartSumLabel))
                 .addGap(18, 18, 18)
                 .addGroup(CartTabLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(RemoveBtn, javax.swing.GroupLayout.PREFERRED_SIZE, 23, javax.swing.GroupLayout.PREFERRED_SIZE)
@@ -1162,7 +1162,8 @@ public class MainFrame extends javax.swing.JFrame {
             ordersModel.setNumRows(0);
         String searchString = SearchField.getText();
         searchString = searchString != null ? searchString.trim() : searchString;
-        this.jLabel16.setText(userSessionBean.getUserCartSum().toPlainString());
+        BigDecimal userCartSum = userSessionBean.getUserCartSum();
+        this.TotalCartSumLabel.setText(userCartSum != null ? userCartSum.toPlainString() : "");
         
         if(firstTime){
             ordersModel = new DefaultTableModel(){
@@ -1314,6 +1315,7 @@ public class MainFrame extends javax.swing.JFrame {
     private javax.swing.JTextField SelectedOrderIDField;
     private javax.swing.JTextField SelectedUserIDTextField;
     private javax.swing.JTextField SurnameText;
+    private javax.swing.JLabel TotalCartSumLabel;
     private javax.swing.JPanel UserPanel;
     private javax.swing.JPanel UserTab;
     private javax.swing.JTabbedPane UserTabbedPanel;
@@ -1327,7 +1329,6 @@ public class MainFrame extends javax.swing.JFrame {
     private javax.swing.JLabel jLabel13;
     private javax.swing.JLabel jLabel14;
     private javax.swing.JLabel jLabel15;
-    private javax.swing.JLabel jLabel16;
     private javax.swing.JLabel jLabel17;
     private javax.swing.JLabel jLabel18;
     private javax.swing.JLabel jLabel2;
