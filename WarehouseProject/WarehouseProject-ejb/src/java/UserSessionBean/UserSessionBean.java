@@ -120,7 +120,7 @@ public class UserSessionBean implements UserSessionBeanRemote {
             
             if(isEmpty(orders) == false){
                 for(Orders o: orders){
-                    em.remove(o);
+                    this.deleteOrder(o.getId());
                 }
             }
             
@@ -193,7 +193,7 @@ public class UserSessionBean implements UserSessionBeanRemote {
     public String deleteInventory(int id) {
         Inventory inventory  = em.find(Inventory.class, id);
         if (inventory != null) {
-            List<Orders> orders = inventory.getOrdersList();
+            List<Orders> orders = this.getAllInventoryOrders(inventory);
             
             if(isEmpty(orders) == false){
                 for(Orders o: orders){
@@ -245,8 +245,7 @@ public class UserSessionBean implements UserSessionBeanRemote {
                         if(stockReservedDifference < 0 || orderAmount == 0){
                             this.deleteOrder(order.getId());
                         } else {
-                           order.setAmount(orderAmount);
-                           em.persist(order);
+                           this.updateOrder(order.getId(), orderAmount);
                            break;
                         }
 
@@ -346,10 +345,10 @@ public class UserSessionBean implements UserSessionBeanRemote {
        } 
        
        for(Orders order: orders){
-           Inventory inventory = order.getItemId();
-           inventory.setReserved(inventory.getReserved() - order.getAmount());
-           em.persist(inventory);
-           em.remove(order);
+           String response = this.deleteOrder(order.getId());
+           if(response != null){
+               return response;
+           }
        }
        
        return null;
@@ -429,8 +428,10 @@ public class UserSessionBean implements UserSessionBeanRemote {
             em.remove(order);
         }       
         
-        user.setDeposit(user.getDeposit().min(sum));
-        em.persist(user);
+        Users user2 = em.find(Users.class, currentUser.getId());
+        BigDecimal newDeposit = user2.getDeposit().subtract(sum);
+        user2.setDeposit(newDeposit);
+        em.merge(user2);
         
         return sum;
     }
